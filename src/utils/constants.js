@@ -17,10 +17,11 @@ class DataStatusCodes {
 
 class ProcessStatusCodes {
   static SUCCESS = 200;
-  static USERNAME_NOTEXISTS = 201;
-  static EMAIL_NOTEXISTS = 202;
-  static PHONE_NOTEXISTS = 203;
-  static INCORRECT_PASSWORD = 204;
+  static FOUND = 201;
+  static USERNAME_NOTEXISTS = 202;
+  static EMAIL_NOTEXISTS = 203;
+  static PHONE_NOTEXISTS = 204;
+  static INCORRECT_PASSWORD = 205;
 }
 
 class ResponseCodes {
