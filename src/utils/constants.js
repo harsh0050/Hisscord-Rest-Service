@@ -62,8 +62,12 @@ class ServerConstants {
   static CATEGORY_NAME = "categoryName";
   static CHANNEL_NAME = "channelName";
   static CHANNEL_TYPE = "channelType";
+  static CHANNEL_LIST = "channelList";
+  static CHANNEL_VOICE = 600;
+  static CHANNEL_TEXT = 601;
   static STATUS = "status";
   static CHAT_ID = "chatId";
+  static ROOT_CATEGORY = "root";
 }
 
 class ChatConstants {

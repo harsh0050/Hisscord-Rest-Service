@@ -16,6 +16,7 @@ const {
   DmConstants,
   ServerConstants,
   ChatConstants,
+  DataStatusCodes,
 } = require("./utils/constants");
 
 const app = express();
@@ -23,12 +24,12 @@ const PORT = process.env.PORT || 8000;
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: "hisscord-765cc.firebaseapp.com",
-  projectId: "hisscord-765cc",
-  storageBucket: "hisscord-765cc.appspot.com",
-  messagingSenderId: "172220188986",
-  appId: "1:172220188986:web:c8bb7e193511a09b53a803",
-  measurementId: "G-VK8MKK1520",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -59,10 +60,12 @@ app.use((req, res, next) => {
     bodyParser.json()(req, res, next);
     return;
   }
-  next();
+  res
+    .status(ResponseCodes.BAD_REQUEST)
+    .send("Empty or Incorrect request body.");
 });
 
-//========================================================================================
+//====================================================================================================
 
 //Registration:
 app.post("/auth/register", async (req, res) => {
@@ -319,30 +322,30 @@ async function getUserById(userId) {
 
 //Direct Messages:
 app.post("/dm", async (req, res) => {
-  const membersList = req.body.membersList;
-  if (!membersList) {
+  const memberList = req.body.memberList;
+  if (!memberList) {
     res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
     return;
   }
   try {
     const docRef = await Firestore.addDoc(dmCollection, {
-      membersList,
+      memberList,
       createdAt: new Date().getTime(),
     });
 
     const chatId = docRef.id;
 
     await Promise.all(
-      membersList.map(async (userId) => {
+      memberList.map(async (userId) => {
         const currDocRef = Firestore.doc(firestore, PathConstants.USER, userId);
         const doc = await Firestore.getDoc(currDocRef);
         const dmList = doc.data().dmList;
         dmList.push(chatId);
-        await Firestore.updateDoc(currDocRef, { dmList });
+        return Firestore.updateDoc(currDocRef, { dmList });
       })
     );
 
-    await addNewEmptyChat(chatId);
+    await addNewEmptyChatWithChatId(chatId);
     res.status(ResponseCodes.SUCCESS).end();
   } catch (err) {
     console.log(err);
@@ -358,13 +361,94 @@ app.post("/dm", async (req, res) => {
 app.post("/server", async (req, res) => {
   const serverName = req.body.serverName;
   const adminUserId = req.body.adminUserId;
+  const memberList = req.body.memberList ?? [adminUserId];
   if (!serverName || !adminUserId) {
     res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
     return;
   }
-
-  Firestore.query(serverCollection, Firestore.where());
+  try{
+    const serverId = await addnewEmptyServer(serverName, adminUserId, memberList);
+    await addDefaultCategories(serverId);
+    await addServerIdToMembers(serverId, memberList);
+    res.status(ResponseCodes.SUCCESS).end();
+  }catch(err){
+    console.log(err);
+    res.status(ResponseCodes.INTERNAL_SERVER_ERROR).send(Strings.INTERNAL_SERVER_ERROR);
+  }
 });
+
+async function addServerIdToMembers(serverId, memberList) {
+  const query = Firestore.query(
+    userCollection,
+    Firestore.where(UserAuthConstants.USER_ID, "in", memberList)
+  );
+  const querySnap = await Firestore.getDocs(query);
+  await Promise.all(
+    querySnap.docs.map(async (docSnap) => {
+      if (docSnap.exists()) {
+        const docData = docSnap.data();
+        const docServerList = docData.serverList;
+        docServerList.push(serverId);
+        return Firestore.updateDoc(docSnap.ref, {
+          [UserAuthConstants.SERVER_LIST]: docServerList,
+        });
+      }
+    })
+  );
+}
+
+async function addnewEmptyServer(serverName, adminUserId, memberList) {
+  const data = {
+    [ServerConstants.SERVER_NAME]: serverName,
+    [ServerConstants.ADMIN_USER_ID]: adminUserId,
+    [ServerConstants.MEMBER_LIST]: memberList,
+    [ServerConstants.CREATED_AT]: new Date().getTime(),
+  };
+  const docRef = await Firestore.addDoc(serverCollection, data);
+  const serverId = docRef.id;
+  return serverId;
+}
+
+async function addDefaultCategories(serverId) {
+  const defaultMessageCategory = {
+    [ServerConstants.CATEGORY_NAME]: "TEXT CHANNELS",
+    [ServerConstants.CHANNEL_LIST]: [
+      {
+        [ServerConstants.CHAT_ID]: await addNewEmptyChat(),
+        [ServerConstants.CHANNEL_NAME]: "general",
+        [ServerConstants.STATUS]: DataStatusCodes.STATUS_ACTIVE,
+        [ServerConstants.CHANNEL_TYPE]: ServerConstants.CHANNEL_TEXT,
+      },
+    ],
+  };
+
+  const defaultVoiceCategory = {
+    [ServerConstants.CHANNEL_NAME]: "VOICE CHANNELS",
+    [ServerConstants.CHANNEL_LIST]: [
+      {
+        [ServerConstants.CHAT_ID]: "N/A",
+        [ServerConstants.CHANNEL_NAME]: "General",
+        [ServerConstants.STATUS]: DataStatusCodes.STATUS_ACTIVE,
+        [ServerConstants.CHANNEL_TYPE]: ServerConstants.CHANNEL_VOICE,
+      },
+    ],
+  };
+
+  const categoryCollRef = Firestore.collection(
+    firestore,
+    PathConstants.SERVER,
+    serverId,
+    PathConstants.CATEGORY
+  );
+
+  await Firestore.addDoc(categoryCollRef, defaultMessageCategory);
+  await Firestore.addDoc(categoryCollRef, defaultVoiceCategory);
+}
+
+async function addNewEmptyChat() {
+  const docRef = await Firestore.addDoc(chatCollection, {});
+  return docRef.id;
+}
 
 //========================================================================================================
 
@@ -376,7 +460,7 @@ app.post("/chat", async (req, res) => {
     return;
   }
   try {
-    await addNewEmptyChat(chatId);
+    await addNewEmptyChatWithChatId(chatId);
     res.status(ResponseCodes.SUCCESS).end();
   } catch (err) {
     console.log(err);
@@ -403,7 +487,7 @@ app.delete("/chat", async (req, res) => {
   }
 });
 
-async function addNewEmptyChat(chatId) {
+async function addNewEmptyChatWithChatId(chatId) {
   const docRef = Firestore.doc(firestore, PathConstants.CHAT, chatId);
   await Firestore.setDoc(docRef, {});
 }
@@ -418,7 +502,7 @@ async function deleteChat(chatId) {
   const querySnap = await Firestore.getDocs(collRef);
   await Promise.all(
     querySnap.docs.map(async (docSnap) => {
-      Firestore.deleteDoc(docSnap);
+      return Firestore.deleteDoc(docSnap);
     })
   );
   await Firestore.deleteDoc(

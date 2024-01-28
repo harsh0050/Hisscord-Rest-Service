@@ -9,7 +9,7 @@ class User {
     joinedAt,
     profilePicture = [],
     dmList = [],
-    channelList = []
+    serverList = []
   ) {
     this.userId = userId;
     this.username = username;
@@ -18,7 +18,7 @@ class User {
     this.joinedAt = joinedAt;
     this.profilePicture = profilePicture;
     this.dmList = dmList;
-    this.channelList = channelList;
+    this.serverList = serverList;
   }
 
   static converter = {
@@ -29,7 +29,7 @@ class User {
         email: user.email,
         phone: user.phone,
         dmList: user.dmList,
-        channelList: user.channelList,
+        serverList: user.serverList,
         joinedAt: user.joinedAt,
         profilePicture: user.profilePicture,
       };
@@ -44,7 +44,7 @@ class User {
           data.joinedAt,
           data.profilePicture,
           data.dmList,
-          data.channelList
+          data.serverList
         );
     },
   };
