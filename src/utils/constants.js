@@ -22,6 +22,7 @@ class ProcessStatusCodes {
   static EMAIL_NOTEXISTS = 203;
   static PHONE_NOTEXISTS = 204;
   static INCORRECT_PASSWORD = 205;
+  static NOT_FOUND = 206;
 }
 
 class ResponseCodes {
@@ -83,12 +84,14 @@ class ChatConstants {
   static PICTURE = "picture";
 }
 
-exports.PathConstants = PathConstants;
-exports.DataStatusCodes = DataStatusCodes;
-exports.ProcessStatusCodes = ProcessStatusCodes;
-exports.ResponseCodes = ResponseCodes;
-exports.Strings = Strings;
-exports.UserAuthConstants = UserAuthConstants;
-exports.DmConstants = DmConstants;
-exports.ServerConstants = ServerConstants;
-exports.ChatConstants = ChatConstants;
+module.exports = {
+  PathConstants,
+  DataStatusCodes,
+  ProcessStatusCodes,
+  ResponseCodes,
+  Strings,
+  UserAuthConstants,
+  DmConstants,
+  ServerConstants,
+  ChatConstants,
+};

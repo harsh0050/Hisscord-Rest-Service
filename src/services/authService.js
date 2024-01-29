@@ -32,12 +32,18 @@ async function addNewAuth(username, password, email, phone) {
 }
 
 async function checkExistingUser(username, email, phone) {
+  // const condition;
+
   const q = query(
     authCollection,
     or(
-      where(UserAuthConstants.USERNAME, "==", username),
-      where(UserAuthConstants.EMAIL, "==", email),
-      where(UserAuthConstants.PHONE, "==", phone)
+      where(
+        UserAuthConstants.USERNAME,
+        "==",
+        username.length === 0 ? null : username
+      ),
+      where(UserAuthConstants.EMAIL, "==", email.length === 0 ? null : email),
+      where(UserAuthConstants.PHONE, "==", phone.length === 0 ? null : phone)
     )
   );
   const docs = await getDocs(q);
@@ -51,6 +57,7 @@ async function checkExistingUser(username, email, phone) {
   const usernameExists = docData.username == username;
   const emailExists = docData.email == email;
   const phoneExists = docData.phone == phone;
+
 
   if (usernameExists && emailExists && phoneExists) {
     return {

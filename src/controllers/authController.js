@@ -25,8 +25,8 @@ const authController = {
     const password = req.body.password;
     const email = req.body.email;
     const phone = req.body.phone;
-    
-    if (!(username && password && email && phone)) {
+
+    if (username==undefined || !password || email==undefined || phone==undefined) {
       res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
       return;
     }
