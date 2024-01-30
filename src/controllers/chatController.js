@@ -1,38 +1,68 @@
-const { ResponseCodes, Strings } = require("../utils/constants");
-const { deleteChat } = require("../services/chatService");
+const {
+  ResponseCodes,
+  Strings,
+  ProcessStatusCodes,
+  ChatConstants,
+} = require("../utils/constants");
+const { addNewMessage } = require("../services/chatService");
 
+const chatController = {
+  async addMessage(req, res) {
+    const chatId = req.params.chatId;
+    const body = req.body;
+    const mimeType = body.mimeType;
+    const sentBy = body.sentBy;
+    const content = body.content;
 
-// app.post("/chat", async (req, res) => {
-//   const chatId = req.body.chatId;
-//   if (!chatId) {
-//     res.status(ResponseCodes.BAD_REQUEST).send("Chat ID not provided.");
-//     return;
-//   }
-//   try {
-//     await addNewEmptyChatWithChatId(chatId);
-//     res.status(ResponseCodes.SUCCESS).end();
-//   } catch (err) {
-//     console.log(err);
-//     res
-//       .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-//       .send(Strings.INTERNAL_SERVER_ERROR);
-//   }
-// });
+    if (!(chatId && mimeType && sentBy)) {
+      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      return;
+    }
+    if (mimeType == ChatConstants.MIME_IMAGE && !content.image) {
+      res.status(ResponseCodes.BAD_REQUEST).send("Please provide the image.");
+      return;
+    }
+    if (mimeType == ChatConstants.MIME_TEXT && !content.text) {
+      res.status(ResponseCodes.BAD_REQUEST).send("Please provide the text.");
+      return;
+    }
+    if (
+      mimeType != ChatConstants.MIME_TEXT &&
+      mimeType != ChatConstants.MIME_IMAGE
+    ) {
+      res.status(ResponseCodes.BAD_REQUEST).send("Invalid MIME Type");
+      return;
+    }
 
+    try {
+      const exists = await findChatByChatId(chatId);
+      if (!exists) {
+        res
+          .status(ResponseCodes.NOT_FOUND)
+          .send("Chat with given ID not found.");
+        return;
+      }
+      await addNewMessage(chatId, mimeType, sentBy, content);
+      
+      res.status(ResponseCodes.SUCCESS).end();
+    } catch (err) {
+      console.log(err);
+      res
+        .status(ResponseCodes.INTERNAL_SERVER_ERROR)
+        .send(Strings.INTERNAL_SERVER_ERROR);
+    }
+  },
+  async getUnreadMessage(req, res) {
+    const chatId = req.params.chatId;
+    const userId = req.body.userId;
 
-// app.delete("/chat", async (req, res) => {
-//   const chatId = req.body.chatId;
-//   if (!chatId) {
-//     res.status(ResponseCodes.BAD_REQUEST).send("Chat ID not provided.");
-//     return;
-//   }
-//   try {
-//     await deleteChat(chatId);
-//     res.status(ResponseCodes.SUCCESS).end();
-//   } catch (err) {
-//     console.log(err);
-//     res
-//       .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-//       .send(Strings.INTERNAL_SERVER_ERROR);
-//   }
-// });
+    if (!userId) {
+      req.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      return;
+    }
+
+    
+  },
+};
+
+module.exports = chatController;

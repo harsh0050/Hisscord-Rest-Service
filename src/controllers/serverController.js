@@ -2,12 +2,17 @@ const {
   addNewEmptyServer,
   addDefaultCategories,
   addNewEmptyCategory,
-  deleteCategoryById,
+  deleteCategory,
   addNewChannel,
   deleteChannelByChatId,
+  getCategoryById,
 } = require("../services/serverService");
 const { addServerIdToMembers } = require("../services/userService");
-const { addNewEmptyChat, deleteChat } = require("../services/chatService");
+const {
+  addNewEmptyChat,
+  deleteChat,
+  findChatByChatId,
+} = require("../services/chatService");
 const {
   ResponseCodes,
   Strings,
@@ -73,17 +78,18 @@ const serverController = {
     }
 
     try {
-      const result = await deleteCategoryById(serverId, categoryId);
-      console.log(result);
+      const result = await getCategoryById(serverId, categoryId);
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
         res.status(ResponseCodes.NOT_FOUND).send(result.content);
         return;
       }
-      const chatIdList = result.content;
-      console.log("deleting chats now...");
+      const chatIdList = await deleteCategory(result.content);
+
       await Promise.all(
         chatIdList.map(async (chatId) => {
-          return deleteChat(chatId);
+          if (await findChatByChatId(chatId)) {
+            await deleteChat(chatId);
+          }
         })
       );
       console.log("deleted");
@@ -113,19 +119,15 @@ const serverController = {
         chatId = await addNewEmptyChat();
       }
 
-      const resultCode = await addNewChannel(
-        serverId,
-        categoryId,
-        chatId,
-        channelName,
-        channelType
-      );
-      if (resultCode == ProcessStatusCodes.NOT_FOUND) {
+      const result = await getCategoryById(serverId, categoryId);
+
+      if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
         res
           .status(ResponseCodes.NOT_FOUND)
           .send("Server or category with given ID not found.");
         return;
       }
+      await addNewChannel(result.content, chatId, channelName, channelType);
 
       res.status(ResponseCodes.SUCCESS).end();
     } catch (err) {
@@ -148,24 +150,27 @@ const serverController = {
     }
 
     try {
-      const resultDeleteChannel = await deleteChannelByChatId(
+      const result = await getCategoryById(serverId, categoryId);
+
+      if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
+        res
+          .status(ResponseCodes.NOT_FOUND)
+          .send("Category with provided ID does not exist.");
+        return;
+      }
+      const deletedChannel = await deleteChannelByChatId(
         serverId,
         categoryId,
         chatId
       );
-      if (resultDeleteChannel == ProcessStatusCodes.NOT_FOUND) {
-        res.status(ResponseCodes.NOT_FOUND).send(resultDeleteChannel.content);
-        return;
-      }
-      const deletedChannel = resultDeleteChannel.content;
       if (deletedChannel.channelType == ServerConstants.CHANNEL_TEXT) {
-        const resultCodeDeleteChat = await deleteChat(chatId);
-        if (resultCodeDeleteChat == ProcessStatusCodes.NOT_FOUND) {
+        if (!findChatByChatId(chatId)) {
           res
             .status(ResponseCodes.NOT_FOUND)
             .send("Chat with given ID not found.");
           return;
         }
+        await deleteChat(chatId);
       }
 
       res.status(ResponseCodes.SUCCESS).end();

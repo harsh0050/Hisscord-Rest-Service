@@ -98,24 +98,19 @@ async function addNewEmptyCategory(serverId, categoryName) {
   });
 }
 
-async function deleteCategoryById(serverId, categoryId) {
-  const result = await getCategoryById(serverId, categoryId);
-  if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-    return {
-      statusCode: result.statusCode,
-      content: result.content,
-    };
-  }
-  const docSnap = result.content;
-  const docData = docSnap.data();
+async function deleteCategory(categoryDocSnap) {
+  const docData = categoryDocSnap.data();
   const channelList = docData.channelList;
   const chatIdList = [];
   channelList.forEach((channel) => {
-    if (channel.channelType == ServerConstants.CHANNEL_TEXT && channel.status == DataStatusCodes.STATUS_ACTIVE)
+    if (
+      channel.channelType == ServerConstants.CHANNEL_TEXT &&
+      channel.status == DataStatusCodes.STATUS_ACTIVE
+    )
       chatIdList.push(channel.chatId);
   });
 
-  await updateDoc(docSnap.ref, {
+  await updateDoc(categoryDocSnap.ref, {
     [ServerConstants.STATUS]: DataStatusCodes.STATUS_DELETED,
     [ServerConstants.CHANNEL_LIST]: [],
   });
@@ -126,20 +121,12 @@ async function deleteCategoryById(serverId, categoryId) {
 }
 
 async function addNewChannel(
-  serverId,
-  categoryId,
+  categoryDocSnap,
   chatId,
   channelName,
   channelType
 ) {
-  const result = await getCategoryById(serverId, categoryId);
-
-  if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-    return ProcessStatusCodes.NOT_FOUND;
-  }
-
-  const docSnap = result.content;
-  const docData = docSnap.data();
+  const docData = categoryDocSnap.data();
   const channelList = docData.channelList;
   const newChannel = {
     [ServerConstants.CHAT_ID]: chatId ?? new Date().getTime(),
@@ -148,22 +135,12 @@ async function addNewChannel(
     [ServerConstants.CHANNEL_TYPE]: channelType,
   };
   channelList.push(newChannel);
-  await updateDoc(docSnap.ref, {
+  await updateDoc(categoryDocSnap.ref, {
     [ServerConstants.CHANNEL_LIST]: channelList,
   });
-  return ProcessStatusCodes.SUCCESS;
 }
 
 async function deleteChannelByChatId(serverId, categoryId, chatId) {
-  const result = await getCategoryById(serverId, categoryId);
-
-  if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-    return {
-      statusCode: ProcessStatusCodes.NOT_FOUND,
-      content: "Category with provided ID does not exist.",
-    };
-  }
-
   const docSnap = result.content;
   const docData = docSnap.data();
   const channelList = docData.channelList;
@@ -179,14 +156,15 @@ async function deleteChannelByChatId(serverId, categoryId, chatId) {
   await updateDoc(docSnap.ref, {
     [ServerConstants.CHANNEL_LIST]: channelList,
   });
-  return { statusCode: ProcessStatusCodes.SUCCESS, content: channelList[idx] };
+  return channelList[idx];
 }
 
 module.exports = {
   addNewEmptyServer,
   addDefaultCategories,
+  getCategoryById,
   addNewEmptyCategory,
-  deleteCategoryById,
+  deleteCategory,
   addNewChannel,
   deleteChannelByChatId,
 };

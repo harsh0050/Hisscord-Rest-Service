@@ -81,7 +81,10 @@ class ChatConstants {
   static SEEN_BY = "seenBy";
   static CONTENT = "content";
   static TEXT = "text";
-  static PICTURE = "picture";
+  static IMAGE = "image";
+  static MIME_TEXT = 55;
+  static MIME_IMAGE = 56;
+  static TIMESTAMP = "timestamp";
 }
 
 module.exports = {
