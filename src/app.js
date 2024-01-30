@@ -27,6 +27,11 @@ app.use("/dm", dmRouter);
 app.use("/server", serverRouter);
 app.use("/chat",chatRouter);
 
+
+app.get("/", (req,res)=>{
+  res.send("Server is running.");
+});
+
 app.listen(PORT, () => {
   console.log(`Listening to port ${PORT}`);
 });
