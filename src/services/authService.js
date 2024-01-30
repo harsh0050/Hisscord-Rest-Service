@@ -54,10 +54,10 @@ async function checkExistingUser(username, email, phone) {
     };
   }
   const docData = docs.docs[0].data();
-  const usernameExists = docData.username == username;
-  const emailExists = docData.email == email;
-  const phoneExists = docData.phone == phone;
-
+  const usernameExists =
+    username.length === 0 ? false : docData.username == username;
+  const emailExists = email.length === 0 ? false : docData.email == email;
+  const phoneExists = phone.length === 0 ? false : docData.phone == phone;
 
   if (usernameExists && emailExists && phoneExists) {
     return {
