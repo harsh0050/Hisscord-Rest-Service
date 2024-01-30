@@ -3,13 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
-
-  "engines": {
-    "node": "18.x"
-  },
-  
   "scripts": {
     "start": "node ./src/app.js",
+    "vercel-build":"echo hello",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Harsh",
