@@ -6,7 +6,7 @@ const authRouter = require("./routes/authRouter");
 const dmRouter = require("./routes/dmRouter");
 const serverRouter = require("./routes/serverRouter");
 const chatRouter = require("./routes/chatRouter");
-const { ResponseCodes } = require("./utils/constants");
+require("./utils/constants");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -35,3 +35,6 @@ app.get("/", (req,res)=>{
 app.listen(PORT, () => {
   console.log(`Listening to port ${PORT}`);
 });
+
+
+module.exports = app;
