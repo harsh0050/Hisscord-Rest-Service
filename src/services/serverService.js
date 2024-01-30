@@ -159,6 +159,22 @@ async function deleteChannelByChatId(serverId, categoryId, chatId) {
   return channelList[idx];
 }
 
+async function getServerMemberList(serverId) {
+  const serverDoc = await getDoc(
+    doc(firestore, PathConstants.SERVER, serverId)
+  );
+  if (!serverDoc.exists()) {
+    return {
+      statusCode: ProcessStatusCodes.NOT_FOUND,
+      content: "Server with given ID does not exist.",
+    };
+  }
+  return {
+    statusCode: ProcessStatusCodes.FOUND,
+    content: serverDoc.data().memberList,
+  };
+}
+
 module.exports = {
   addNewEmptyServer,
   addDefaultCategories,
@@ -167,4 +183,5 @@ module.exports = {
   deleteCategory,
   addNewChannel,
   deleteChannelByChatId,
+  getServerMemberList,
 };

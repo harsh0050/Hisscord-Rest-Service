@@ -17,28 +17,48 @@ const firebaseApp = initializeApp(firebaseConfig);
 
 const firestore = Firestore.getFirestore(firebaseApp);
 
-async function clearDatabase(){
-  (await Firestore.getDocs(Firestore.collection(firestore, "authentication"))).docs.forEach((docSnap)=>{
+async function clearDatabase() {
+  (
+    await Firestore.getDocs(Firestore.collection(firestore, "authentication"))
+  ).docs.forEach((docSnap) => {
     Firestore.deleteDoc(docSnap.ref);
   });
-  (await Firestore.getDocs(Firestore.collection(firestore, "user"))).docs.forEach((docSnap)=>{
+  (
+    await Firestore.getDocs(Firestore.collection(firestore, "user"))
+  ).docs.forEach((docSnap) => {
+    Firestore.deleteDoc(docSnap.ref);
+  });
+  (
+    await Firestore.getDocs(Firestore.collection(firestore, "chat"))
+  ).docs.forEach(async (docSnap) => {
+    console.log("noew: ", docSnap.id);
+    (
+      await Firestore.getDocs(
+        Firestore.collection(firestore, "chat", docSnap.id, "message")
+      )
+    ).docs.forEach(async (subDocSnap) => {
+      await Firestore.deleteDoc(subDocSnap.ref);
+    });
     Firestore.deleteDoc(docSnap.ref);
   });
 
-  (await Firestore.getDocs(Firestore.collection(firestore, "chat"))).docs.forEach((docSnap)=>{
+  (
+    await Firestore.getDocs(Firestore.collection(firestore, "direct-messages"))
+  ).docs.forEach((docSnap) => {
     Firestore.deleteDoc(docSnap.ref);
   });
 
-  (await Firestore.getDocs(Firestore.collection(firestore, "direct-messages"))).docs.forEach((docSnap)=>{
-    Firestore.deleteDoc(docSnap.ref);
-  });
-
-  (await Firestore.getDocs(Firestore.collection(firestore, "server"))).docs.forEach(async (docSnap)=>{
-    (await Firestore.getDocs(Firestore.collection(firestore, "server", docSnap.id, "category"))).docs.forEach(async (nDocSnap)=>{
+  (
+    await Firestore.getDocs(Firestore.collection(firestore, "server"))
+  ).docs.forEach(async (docSnap) => {
+    (
+      await Firestore.getDocs(
+        Firestore.collection(firestore, "server", docSnap.id, "category")
+      )
+    ).docs.forEach(async (nDocSnap) => {
       await Firestore.deleteDoc(nDocSnap.ref);
-    })
+    });
     Firestore.deleteDoc(docSnap.ref);
   });
-
 }
-module.exports = {firestore, clearDatabase};
+module.exports = { firestore, clearDatabase };

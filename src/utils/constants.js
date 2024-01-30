@@ -78,7 +78,7 @@ class ChatConstants {
   static MIME_TYPE = "mimeType";
   static STATUS = "status";
   static SENT_BY = "sentBy";
-  static SEEN_BY = "seenBy";
+  static NOT_SEEN_BY = "notSeenBy";
   static CONTENT = "content";
   static TEXT = "text";
   static IMAGE = "image";

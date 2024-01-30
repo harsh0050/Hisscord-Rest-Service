@@ -4,7 +4,15 @@ const {
   ProcessStatusCodes,
   ChatConstants,
 } = require("../utils/constants");
-const { addNewMessage } = require("../services/chatService");
+const {
+  addNewMessage,
+  getUnreadMessage,
+  findChatByChatId,
+  updateMessage,
+  deleteMessageById,
+} = require("../services/chatService");
+const { getServerMemberList } = require("../services/serverService");
+const { getDmMemberList } = require("../services/dmService");
 
 const chatController = {
   async addMessage(req, res) {
@@ -13,6 +21,7 @@ const chatController = {
     const mimeType = body.mimeType;
     const sentBy = body.sentBy;
     const content = body.content;
+    const serverId = body.serverId;
 
     if (!(chatId && mimeType && sentBy)) {
       res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
@@ -42,8 +51,21 @@ const chatController = {
           .send("Chat with given ID not found.");
         return;
       }
-      await addNewMessage(chatId, mimeType, sentBy, content);
-      
+      let result;
+      if (serverId) {
+        result = await getServerMemberList(serverId);
+      } else {
+        result = await getDmMemberList(chatId);
+      }
+
+      if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
+        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        return;
+      }
+
+      const memberList = result.content;
+      await addNewMessage(chatId, mimeType, sentBy, content, memberList);
+
       res.status(ResponseCodes.SUCCESS).end();
     } catch (err) {
       console.log(err);
@@ -57,11 +79,109 @@ const chatController = {
     const userId = req.body.userId;
 
     if (!userId) {
-      req.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
       return;
     }
+    try {
+      if (!(await findChatByChatId(chatId))) {
+        res
+          .status(ResponseCodes.NOT_FOUND)
+          .send("Chat with ID does not exist.");
+        return;
+      }
+      const msgs = await getUnreadMessage(chatId, userId);
+      res.status(ResponseCodes.SUCCESS).send(msgs);
+    } catch (err) {
+      console.log(err);
+      res
+        .status(ResponseCodes.INTERNAL_SERVER_ERROR)
+        .send(Strings.INTERNAL_SERVER_ERROR);
+    }
+  },
 
-    
+  async updateMessage(req, res) {
+    const chatId = req.params.chatId;
+    const messageId = req.params.messageId;
+
+    if (!(chatId && messageId)) {
+      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      return;
+    }
+    const text = req.body.text;
+    const serverId = req.body.serverId;
+
+    try {
+      let result;
+      if (serverId) {
+        result = await getServerMemberList(serverId);
+      } else {
+        result = await getDmMemberList(chatId);
+      }
+
+      if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
+        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        return;
+      }
+
+      const memberList = result.content;
+      const resultCode = await updateMessage(
+        chatId,
+        messageId,
+        text,
+        memberList
+      );
+      if (resultCode == ProcessStatusCodes.NOT_FOUND) {
+        res
+          .status(ResponseCodes.NOT_FOUND)
+          .send("Invalid Chat ID or Message ID provided.");
+        return;
+      }
+      res.status(ResponseCodes.SUCCESS).end();
+    } catch (err) {
+      console.log(err);
+      res
+        .status(ResponseCodes.INTERNAL_SERVER_ERROR)
+        .send(Strings.INTERNAL_SERVER_ERROR);
+    }
+  },
+
+  async deleteMessage(req, res) {
+    const chatId = req.params.chatId;
+    const messageId = req.params.messageId;
+    if (!(chatId && messageId && req.body)) {
+      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      return;
+    }
+    let result;
+    const serverId = req.body.serverId;
+
+    try {
+      if (serverId) {
+        result = await getServerMemberList(serverId);
+      } else {
+        result = await getDmMemberList(chatId);
+      }
+
+      if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
+        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        return;
+      }
+
+      const memberList = result.content;
+      const resultCode = await deleteMessageById(chatId, messageId, memberList);
+      if (resultCode == ProcessStatusCodes.NOT_FOUND) {
+        res
+          .status(ResponseCodes.NOT_FOUND)
+          .send("Invalid Chat ID or Message ID provided.");
+        return;
+      }
+      res.status(ResponseCodes.SUCCESS).end();
+    } catch (err) {
+      console.log(err);
+      res
+        .status(ResponseCodes.INTERNAL_SERVER_ERROR)
+        .send(Strings.INTERNAL_SERVER_ERROR);
+    }
   },
 };
 

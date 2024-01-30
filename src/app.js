@@ -6,6 +6,7 @@ const authRouter = require("./routes/authRouter");
 const dmRouter = require("./routes/dmRouter");
 const serverRouter = require("./routes/serverRouter");
 const chatRouter = require("./routes/chatRouter");
+const { ResponseCodes } = require("./utils/constants");
 
 const app = express();
 const PORT = process.env.PORT || 8000;

@@ -9,11 +9,13 @@ const {
   getDoc,
   query,
   where,
+  updateDoc,
 } = require("firebase/firestore");
 const {
   PathConstants,
   ChatConstants,
   DataStatusCodes,
+  ProcessStatusCodes,
 } = require("../utils/constants");
 const chatCollection = collection(firestore, PathConstants.CHAT);
 
@@ -49,7 +51,13 @@ async function findChatByChatId(chatId) {
   return docSnap.exists();
 }
 
-async function addNewMessage(chatId, mimeType, sentBy, content) {
+async function addNewMessage(
+  chatId,
+  mimeType,
+  sentBy,
+  content,
+  chatMemberList
+) {
   const msgCollRef = collection(
     firestore,
     PathConstants.CHAT,
@@ -70,21 +78,84 @@ async function addNewMessage(chatId, mimeType, sentBy, content) {
     [ChatConstants.MIME_TYPE]: mimeType,
     [ChatConstants.STATUS]: DataStatusCodes.STATUS_NEW,
     [ChatConstants.SENT_BY]: sentBy,
-    [ChatConstants.SEEN_BY]: [sentBy],
+    [ChatConstants.NOT_SEEN_BY]: chatMemberList,
     [ChatConstants.CONTENT]: msgContent,
     [ChatConstants.TIMESTAMP]: new Date().getTime(),
   };
   await addDoc(msgCollRef, msg);
 }
 
-async function getUnreadMessage(chatId, userId){
-  const collRef = collection(firestore, PathConstants.CHAT, chatId, PathConstants.MESSAGE);
+async function getUnreadMessage(chatId, userId) {
+  const msgCollRef = collection(
+    firestore,
+    PathConstants.CHAT,
+    chatId,
+    PathConstants.MESSAGE
+  );
+  const q = query(
+    msgCollRef,
+    where(ChatConstants.NOT_SEEN_BY, "array-contains", userId)
+  );
+  const docs = await getDocs(q);
+  const messages = [];
+  docs.docs.forEach((docSnap) => {
+    const docData = docSnap.data();
+
+    const msg = {
+      [ChatConstants.MESSAGE_ID]: docSnap.id,
+      [ChatConstants.MIME_TYPE]: docData.mimeType,
+      [ChatConstants.STATUS]: docData.status,
+      [ChatConstants.SENT_BY]: docData.sentBy,
+      [ChatConstants.CONTENT]: docData.content,
+      [ChatConstants.TIMESTAMP]: docData.timestamp,
+    };
+    messages.push(msg);
+  });
+  return messages;
 }
 
+async function updateMessage(chatId, messageId, text, memberList) {
+  const docSnap = await getMessageById(chatId, messageId);
+  if (!docSnap.exists()) {
+    return ProcessStatusCodes.NOT_FOUND;
+  }
+  const content = docSnap.data().content;
+  content.text = text;
+  await updateDoc(docSnap.ref, {
+    [ChatConstants.CONTENT]: content,
+    [ChatConstants.STATUS]: DataStatusCodes.STATUS_EDITED,
+    [ChatConstants.NOT_SEEN_BY]: memberList,
+  });
+  return ProcessStatusCodes.SUCCESS;
+}
+
+async function deleteMessageById(chatId, messageId, memberList) {
+  const docSnap = await getMessageById(chatId, messageId);
+  if (!docSnap.exists()) {
+    return ProcessStatusCodes.NOT_FOUND;
+  }
+
+  await updateDoc(docSnap.ref, {
+    [ChatConstants.CONTENT]: {},
+    [ChatConstants.STATUS]: DataStatusCodes.STATUS_DELETED,
+    [ChatConstants.NOT_SEEN_BY]: memberList,
+  });
+  return ProcessStatusCodes.SUCCESS;
+}
+
+async function getMessageById(chatId, messageId){
+  const docSnap = await getDoc(
+    doc(firestore, PathConstants.CHAT, chatId, PathConstants.MESSAGE, messageId)
+  );
+  return docSnap
+}
 module.exports = {
   addNewEmptyChat,
   addNewEmptyChatWithChatId,
   findChatByChatId,
   deleteChat,
   addNewMessage,
+  getUnreadMessage,
+  updateMessage,
+  deleteMessageById
 };
