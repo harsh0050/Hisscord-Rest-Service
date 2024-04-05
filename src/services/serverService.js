@@ -11,6 +11,7 @@ const {
   doc,
   getDoc,
   updateDoc,
+  getDocs,
 } = require("firebase/firestore");
 
 const serverCollection = collection(firestore, PathConstants.SERVER);
@@ -160,9 +161,29 @@ async function deleteChannelByChatId(serverId, categoryId, chatId) {
 }
 
 async function getServerMemberList(serverId) {
+  const result = await getServerById(serverId)
+  if(result.statusCode==ProcessStatusCodes.NOT_FOUND){
+    return {
+      statusCode: result.statusCode,
+      content: result.content
+    }
+  }
+  return {
+    statusCode: result.result,
+    content: result.content.memberList,
+  };
+}
+
+async function getServerById(serverId){
   const serverDoc = await getDoc(
     doc(firestore, PathConstants.SERVER, serverId)
   );
+  const all = await getDocs(serverCollection);
+  all.docs.forEach((docSnap)=>{
+    console.log(docSnap.id);
+  })
+  console.log(serverId);
+  console.log(serverDoc.data());
   if (!serverDoc.exists()) {
     return {
       statusCode: ProcessStatusCodes.NOT_FOUND,
@@ -171,8 +192,8 @@ async function getServerMemberList(serverId) {
   }
   return {
     statusCode: ProcessStatusCodes.FOUND,
-    content: serverDoc.data().memberList,
-  };
+    content: serverDoc.data()
+  }
 }
 
 module.exports = {
@@ -184,4 +205,5 @@ module.exports = {
   addNewChannel,
   deleteChannelByChatId,
   getServerMemberList,
+  getServerById
 };

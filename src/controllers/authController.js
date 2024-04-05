@@ -17,6 +17,10 @@ const {
   ProcessStatusCodes,
 } = require("../utils/constants");
 
+const {
+  getErrorJson
+} = require("../utils/responseUtils")
+
 const bcrypt = require("bcrypt");
 
 const authController = {
@@ -27,14 +31,14 @@ const authController = {
     const phone = req.body.phone;
 
     if (username==undefined || !password || email==undefined || phone==undefined) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
 
     try {
       const result = await checkExistingUser(username, email, phone);
       if (result.exists) {
-        res.status(ResponseCodes.CONFLICT).send(result.message);
+        res.status(ResponseCodes.CONFLICT).json(getErrorJson(result.message));
         return;
       }
       const userId = await addNewAuth(username, password, email, phone);
@@ -44,8 +48,8 @@ const authController = {
       if (user == undefined) {
         res
           .status(ResponseCodes.CONFLICT)
-          .send(
-            "An error occured while creating the user, Internal server error."
+          .json(
+            getErrorJson("An error occured while creating the user, Internal server error.")
           );
         return;
       }
@@ -55,7 +59,7 @@ const authController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -67,7 +71,7 @@ const authController = {
     const password = req.body.password;
 
     if (!password || !(username || email || phone)) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
 
@@ -82,13 +86,13 @@ const authController = {
       }
 
       if (getAuthResult.resultCode != ProcessStatusCodes.FOUND) {
-        res.status(ResponseCodes.NOT_FOUND).send(getAuthResult.content);
+        res.status(ResponseCodes.NOT_FOUND).json(getErrorJson(getAuthResult.content));
         return;
       }
       authSnap = getAuthResult.content;
 
       if (!bcrypt.compareSync(password, authSnap.data().password)) {
-        res.status(ResponseCodes.UNAUTHORIZED).send("Incorrect password.");
+        res.status(ResponseCodes.UNAUTHORIZED).json(getErrorJson("Incorrect password."));
         return;
       }
 
@@ -99,7 +103,7 @@ const authController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 };

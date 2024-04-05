@@ -6,6 +6,7 @@ const {
   addNewChannel,
   deleteChannelByChatId,
   getCategoryById,
+  getServerById,
 } = require("../services/serverService");
 const { addServerIdToMembers } = require("../services/userService");
 const {
@@ -20,6 +21,11 @@ const {
   ServerConstants,
 } = require("../utils/constants");
 
+
+const {
+  getErrorJson
+} = require("../utils/responseUtils")
+
 const serverController = {
   async createNewServer(req, res) {
     const serverName = req.body.serverName;
@@ -28,7 +34,7 @@ const serverController = {
     const memberList =
       memberListFromBody.length > 0 ? memberListFromBody : [adminUserId];
     if (!serverName || !adminUserId) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     try {
@@ -46,7 +52,7 @@ const serverController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -54,18 +60,23 @@ const serverController = {
     const serverId = req.body.serverId;
     const categoryName = req.body.categoryName;
     if (!serverId || !categoryName) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
 
     try {
+      const result = await getServerById(serverId);
+      if(result.statusCode!= ProcessStatusCodes.FOUND){
+        res.status(ResponseCodes.NOT_FOUND).json(getErrorJson(result.content));
+        return;
+      }
       await addNewEmptyCategory(serverId, categoryName);
       res.status(ResponseCodes.SUCCESS).end();
     } catch (err) {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -73,14 +84,14 @@ const serverController = {
     const serverId = req.body.serverId;
     const categoryId = req.body.categoryId;
     if (!serverId || !categoryId) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
 
     try {
       const result = await getCategoryById(serverId, categoryId);
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        res.status(ResponseCodes.NOT_FOUND).json(getErrorJson(result.content));
         return;
       }
       const chatIdList = await deleteCategory(result.content);
@@ -99,7 +110,7 @@ const serverController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -110,7 +121,7 @@ const serverController = {
     const channelType = req.body.channelType;
 
     if (!(serverId && categoryId && channelName && channelType)) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     try {
@@ -124,7 +135,7 @@ const serverController = {
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
         res
           .status(ResponseCodes.NOT_FOUND)
-          .send("Server or category with given ID not found.");
+          .json(getErrorJson("Server or category with given ID not found."));
         return;
       }
       await addNewChannel(result.content, chatId, channelName, channelType);
@@ -134,7 +145,7 @@ const serverController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -145,7 +156,7 @@ const serverController = {
     const chatId = req.body.chatId;
 
     if (!(serverId && categoryId && chatId)) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
 
@@ -155,7 +166,7 @@ const serverController = {
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
         res
           .status(ResponseCodes.NOT_FOUND)
-          .send("Category with provided ID does not exist.");
+          .json(getErrorJson("Category with provided ID does not exist."));
         return;
       }
       const deletedChannel = await deleteChannelByChatId(
@@ -167,7 +178,7 @@ const serverController = {
         if (!findChatByChatId(chatId)) {
           res
             .status(ResponseCodes.NOT_FOUND)
-            .send("Chat with given ID not found.");
+            .json(getErrorJson("Chat with given ID not found."));
           return;
         }
         await deleteChat(chatId);
@@ -178,7 +189,7 @@ const serverController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 };

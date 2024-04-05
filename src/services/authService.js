@@ -111,7 +111,7 @@ async function getAuthByUsername(username) {
   if (docs.length == 0) {
     return {
       resultCode: ProcessStatusCodes.USERNAME_NOTEXISTS,
-      content: "User with provided Email address does not exist.",
+      content: "User with provided Username does not exist.",
     };
   }
   const docSnap = docs[0];

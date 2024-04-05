@@ -3,11 +3,16 @@ const { addNewDm } = require("../services/dmService");
 const { addDmToUsers } = require("../services/userService");
 const { addNewEmptyChatWithChatId } = require("../services/chatService");
 
+
+const {
+  getErrorJson
+} = require("../utils/responseUtils")
+
 const dmController = {
   async addNewDm(req, res) {
     const memberList = req.body.memberList;
     if (!memberList || memberList.length < 2) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     try {
@@ -19,7 +24,7 @@ const dmController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 };

@@ -14,6 +14,10 @@ const {
 const { getServerMemberList } = require("../services/serverService");
 const { getDmMemberList } = require("../services/dmService");
 
+const {
+  getErrorJson
+} = require("../utils/responseUtils")
+
 const chatController = {
   async addMessage(req, res) {
     const chatId = req.params.chatId;
@@ -24,22 +28,22 @@ const chatController = {
     const serverId = body.serverId;
 
     if (!(chatId && mimeType && sentBy)) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     if (mimeType == ChatConstants.MIME_IMAGE && !content.image) {
-      res.status(ResponseCodes.BAD_REQUEST).send("Please provide the image.");
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson("Please provide the image."));
       return;
     }
     if (mimeType == ChatConstants.MIME_TEXT && !content.text) {
-      res.status(ResponseCodes.BAD_REQUEST).send("Please provide the text.");
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson("Please provide the text."));
       return;
     }
     if (
       mimeType != ChatConstants.MIME_TEXT &&
       mimeType != ChatConstants.MIME_IMAGE
     ) {
-      res.status(ResponseCodes.BAD_REQUEST).send("Invalid MIME Type");
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson("Invalid MIME Type"));
       return;
     }
 
@@ -48,7 +52,7 @@ const chatController = {
       if (!exists) {
         res
           .status(ResponseCodes.NOT_FOUND)
-          .send("Chat with given ID not found.");
+          .json(getErrorJson("Chat with given ID not found."));
         return;
       }
       let result;
@@ -59,7 +63,7 @@ const chatController = {
       }
 
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        res.status(ResponseCodes.NOT_FOUND).json(getErrorJson(result.content));
         return;
       }
 
@@ -71,7 +75,7 @@ const chatController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
   async getUnreadMessage(req, res) {
@@ -79,14 +83,14 @@ const chatController = {
     const userId = req.body.userId;
 
     if (!userId) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     try {
       if (!(await findChatByChatId(chatId))) {
         res
           .status(ResponseCodes.NOT_FOUND)
-          .send("Chat with ID does not exist.");
+          .json(getErrorJson("Chat with ID does not exist."));
         return;
       }
       const msgs = await getUnreadMessage(chatId, userId);
@@ -95,7 +99,7 @@ const chatController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -104,7 +108,7 @@ const chatController = {
     const messageId = req.params.messageId;
 
     if (!(chatId && messageId)) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     const text = req.body.text;
@@ -119,7 +123,7 @@ const chatController = {
       }
 
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        res.status(ResponseCodes.NOT_FOUND).json(getErrorJson(result.content));
         return;
       }
 
@@ -133,7 +137,7 @@ const chatController = {
       if (resultCode == ProcessStatusCodes.NOT_FOUND) {
         res
           .status(ResponseCodes.NOT_FOUND)
-          .send("Invalid Chat ID or Message ID provided.");
+          .json(getErrorJson("Invalid Chat ID or Message ID provided."));
         return;
       }
       res.status(ResponseCodes.SUCCESS).end();
@@ -141,7 +145,7 @@ const chatController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 
@@ -149,7 +153,7 @@ const chatController = {
     const chatId = req.params.chatId;
     const messageId = req.params.messageId;
     if (!(chatId && messageId && req.body)) {
-      res.status(ResponseCodes.BAD_REQUEST).send(Strings.BAD_REQUEST);
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
     let result;
@@ -163,7 +167,7 @@ const chatController = {
       }
 
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
-        res.status(ResponseCodes.NOT_FOUND).send(result.content);
+        res.status(ResponseCodes.NOT_FOUND).json(getErrorJson(result.content));
         return;
       }
 
@@ -172,7 +176,7 @@ const chatController = {
       if (resultCode == ProcessStatusCodes.NOT_FOUND) {
         res
           .status(ResponseCodes.NOT_FOUND)
-          .send("Invalid Chat ID or Message ID provided.");
+          .json(getErrorJson("Invalid Chat ID or Message ID provided."));
         return;
       }
       res.status(ResponseCodes.SUCCESS).end();
@@ -180,7 +184,7 @@ const chatController = {
       console.log(err);
       res
         .status(ResponseCodes.INTERNAL_SERVER_ERROR)
-        .send(Strings.INTERNAL_SERVER_ERROR);
+        .json(getErrorJson(Strings.INTERNAL_SERVER_ERROR));
     }
   },
 };
