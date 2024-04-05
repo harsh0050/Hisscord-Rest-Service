@@ -68,7 +68,7 @@ class ServerConstants {
   static CHANNEL_VOICE = 600;
   static CHANNEL_TEXT = 601;
   static STATUS = "status";
-  static CHAT_ID = "chatId";c
+  static CHAT_ID = "chatId";
   static ROOT_CATEGORY = "root";
 }
 
