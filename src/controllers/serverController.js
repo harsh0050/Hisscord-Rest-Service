@@ -129,7 +129,7 @@ const serverController = {
       if (channelType == ServerConstants.CHANNEL_TEXT) {
         chatId = await addNewEmptyChat();
       }
-
+      
       const result = await getCategoryById(serverId, categoryId);
 
       if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
@@ -138,6 +138,7 @@ const serverController = {
           .json(getErrorJson("Server or category with given ID not found."));
         return;
       }
+      console.log("chatId :"+ chatId)
       await addNewChannel(result.content, chatId, channelName, channelType);
 
       res.status(ResponseCodes.SUCCESS).end();

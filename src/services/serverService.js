@@ -129,8 +129,9 @@ async function addNewChannel(
 ) {
   const docData = categoryDocSnap.data();
   const channelList = docData.channelList;
+  const currentTime = new Date().getTime() + ""
   const newChannel = {
-    [ServerConstants.CHAT_ID]: chatId ?? new Date().getTime(),
+    [ServerConstants.CHAT_ID]: chatId ?? currentTime,
     [ServerConstants.CHANNEL_NAME]: channelName,
     [ServerConstants.STATUS]: DataStatusCodes.STATUS_ACTIVE,
     [ServerConstants.CHANNEL_TYPE]: channelType,
