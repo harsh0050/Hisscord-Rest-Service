@@ -118,12 +118,19 @@ const serverController = {
     const serverId = req.body.serverId;
     const categoryId = req.params.categoryId;
     const channelName = req.body.channelName;
-    const channelType = req.body.channelType;
-
+    var channelType = req.body.channelType;
+    
     if (!(serverId && categoryId && channelName && channelType)) {
       res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
       return;
     }
+
+    channelType = parseInt(channelType)
+    if(!channelName){
+      res.status(ResponseCodes.BAD_REQUEST).json(getErrorJson(Strings.BAD_REQUEST));
+      return;
+    }
+
     try {
       let chatId;
       if (channelType == ServerConstants.CHANNEL_TEXT) {
