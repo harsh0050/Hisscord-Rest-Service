@@ -1,0 +1,9 @@
+[{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hurs.hisscord",
+      "sha256_cert_fingerprints":
+      ["50:32:7C:87:F4:99:12:B7:05:2B:30:61:37:AF:73:00:1A:18:9E:14:7C:D3:32:77:8E:13:91:DC:A0:BD:77:77"]
+    }
+  }]
