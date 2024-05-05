@@ -69,9 +69,23 @@ async function addServerIdToMembers(serverId, memberList) {
   );
 }
 
+async function updateUserServerList(userId, newServerList) {
+  await updateDoc(doc(firestore, PathConstants.USER, userId), {
+    [UserAuthConstants.SERVER_LIST]: newServerList,
+  });
+}
+
+async function updateDmList(userId, newDmList) {
+  await updateDoc(doc(firestore, PathConstants.USER, userId), {
+    [UserAuthConstants.DM_LIST]: newDmList,
+  });
+}
+
 module.exports = {
   createUser,
   getUserById,
   addDmToUsers,
-  addServerIdToMembers
+  addServerIdToMembers,
+  updateUserServerList,
+  updateDmList,
 };

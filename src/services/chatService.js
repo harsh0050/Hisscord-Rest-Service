@@ -143,11 +143,31 @@ async function deleteMessageById(chatId, messageId, memberList) {
   return ProcessStatusCodes.SUCCESS;
 }
 
-async function getMessageById(chatId, messageId){
+async function getMessageById(chatId, messageId) {
   const docSnap = await getDoc(
     doc(firestore, PathConstants.CHAT, chatId, PathConstants.MESSAGE, messageId)
   );
-  return docSnap
+  return docSnap;
+}
+
+async function updateNotSeenBy(messageId, chatId, newNotSeenBy) {
+  const docRef = doc(
+    firestore,
+    PathConstants.CHAT,
+    chatId,
+    PathConstants.MESSAGE,
+    messageId
+  );
+  await updateDoc(docRef, {
+    [ChatConstants.NOT_SEEN_BY]: newNotSeenBy,
+  });
+}
+
+async function getMessageCollectionByChatId(chatId) {
+  const docs = await getDocs(
+    collection(firestore, PathConstants.CHAT, chatId, PathConstants.MESSAGE)
+  );
+  return docs.docs;
 }
 module.exports = {
   addNewEmptyChat,
@@ -157,5 +177,7 @@ module.exports = {
   addNewMessage,
   getUnreadMessage,
   updateMessage,
-  deleteMessageById
+  deleteMessageById,
+  updateNotSeenBy,
+  getMessageCollectionByChatId
 };

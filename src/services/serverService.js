@@ -129,7 +129,7 @@ async function addNewChannel(
 ) {
   const docData = categoryDocSnap.data();
   const channelList = docData.channelList;
-  const currentTime = new Date().getTime() + ""
+  const currentTime = new Date().getTime() + "";
   const newChannel = {
     [ServerConstants.CHAT_ID]: chatId ?? currentTime,
     [ServerConstants.CHANNEL_NAME]: channelName,
@@ -143,6 +143,7 @@ async function addNewChannel(
 }
 
 async function deleteChannelByChatId(serverId, categoryId, chatId) {
+  const result = await getCategoryById(serverId, categoryId);
   const docSnap = result.content;
   const docData = docSnap.data();
   const channelList = docData.channelList;
@@ -162,12 +163,12 @@ async function deleteChannelByChatId(serverId, categoryId, chatId) {
 }
 
 async function getServerMemberList(serverId) {
-  const result = await getServerById(serverId)
-  if(result.statusCode==ProcessStatusCodes.NOT_FOUND){
+  const result = await getServerById(serverId);
+  if (result.statusCode == ProcessStatusCodes.NOT_FOUND) {
     return {
       statusCode: result.statusCode,
-      content: result.content
-    }
+      content: result.content,
+    };
   }
   return {
     statusCode: result.result,
@@ -175,16 +176,16 @@ async function getServerMemberList(serverId) {
   };
 }
 
-async function getServerById(serverId){
+async function getServerById(serverId) {
   const serverDoc = await getDoc(
     doc(firestore, PathConstants.SERVER, serverId)
   );
-  const all = await getDocs(serverCollection);
-  all.docs.forEach((docSnap)=>{
-    console.log(docSnap.id);
-  })
-  console.log(serverId);
-  console.log(serverDoc.data());
+  // const all = await getDocs(serverCollection);
+  // all.docs.forEach((docSnap)=>{
+  //   console.log(docSnap.id);
+  // })
+  // console.log(serverId);
+  // console.log(serverDoc.data());
   if (!serverDoc.exists()) {
     return {
       statusCode: ProcessStatusCodes.NOT_FOUND,
@@ -193,8 +194,20 @@ async function getServerById(serverId){
   }
   return {
     statusCode: ProcessStatusCodes.FOUND,
-    content: serverDoc.data()
-  }
+    content: serverDoc.data(),
+  };
+}
+
+async function updateServerMemberList(serverId, newMemberList) {
+  await updateDoc(doc(firestore, PathConstants.SERVER, serverId), {
+    [ServerConstants.MEMBER_LIST]: newMemberList,
+  });
+}
+
+async function getCategoryCollectionByServerId(serverId){
+  const coll = collection(firestore, PathConstants.SERVER, serverId, PathConstants.CATEGORY);
+  const docs =await getDocs(coll);
+  return docs.docs
 }
 
 module.exports = {
@@ -206,5 +219,7 @@ module.exports = {
   addNewChannel,
   deleteChannelByChatId,
   getServerMemberList,
-  getServerById
+  getServerById,
+  updateServerMemberList,
+  getCategoryCollectionByServerId
 };
