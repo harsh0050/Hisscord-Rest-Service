@@ -252,15 +252,14 @@ const serverController = {
       const memberListOfServer = server.memberList;
       if (memberListOfServer.indexOf(userId) == -1) {
         memberListOfServer.push(userId);
+        await updateServerMemberList(serverId, memberListOfServer);
       }
 
       const serverListOfUser = user.serverList;
       if (serverListOfUser.indexOf(serverId) == -1) {
         serverListOfUser.push(serverId);
+        await updateUserServerList(userId, serverListOfUser);
       }
-
-      await updateServerMemberList(serverId, memberListOfServer);
-      await updateUserServerList(userId, serverListOfUser);
 
       const categories = await getCategoryCollectionByServerId(serverId);
       const chatIds = [];
@@ -278,7 +277,7 @@ const serverController = {
         const msgs = await getMessageCollectionByChatId(chatId);
         msgs.forEach(async (msg) => {
           const { notSeenBy } = msg.data();
-          if(notSeenBy.indexOf(userId) == -1){
+          if (notSeenBy.indexOf(userId) == -1) {
             notSeenBy.push(userId);
           }
           await updateNotSeenBy(msg.id, chatId, notSeenBy);
